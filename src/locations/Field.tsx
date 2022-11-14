@@ -14,7 +14,7 @@ const Field = () => {
       return <TextToJsonEditorComponent />
     }
     default:{
-      return <Paragraph>Did not yet implement (AppId: {sdk.ids.app})</Paragraph>;
+      return <Paragraph>Did not yet implement (AppId: {sdk.ids.app}), location: {location}</Paragraph>;
     }
   }
 };
