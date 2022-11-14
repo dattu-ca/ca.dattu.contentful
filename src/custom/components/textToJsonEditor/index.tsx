@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 import {useSDK} from "@contentful/react-apps-toolkit";
 import {FieldExtensionSDK} from "@contentful/app-sdk";
 import SvelteJSONEditor from "./SvelteJSONEditor";
@@ -13,18 +13,22 @@ interface iOnChangeParam {
 const TextToJsonEditorComponent = () => {
     const sdk = useSDK<FieldExtensionSDK>();
 
+    const [jsonAsString, setJsonAsString] = useState((sdk.field.getValue() || JSON.stringify({}, null, 2)));
+
     const onChangeHandler = (newData: iOnChangeParam) => {
         const json = newData.json || JSON.parse(newData.text as string);
         if (json) {
             sdk.field.setValue(JSON.stringify(json))
-                .then(response => console.log("response", response));
+                .then(response => {
+                    setJsonAsString((response || JSON.stringify({}, null, 2)));
+                });
         }
     };
 
 
     return <SvelteJSONEditor
         content={{
-            text: (sdk.field.getValue() || JSON.stringify({}, null, 2))
+            text: jsonAsString
         }}
         readOnly={false}
         onChange={onChangeHandler}/>;
