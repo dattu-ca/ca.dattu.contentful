@@ -2,10 +2,11 @@ import React, {useState} from "react";
 import {useSDK} from "@contentful/react-apps-toolkit";
 import {
     Box,
-    Button, Checkbox,
+    Button,
+    Checkbox,
     DragHandle,
-    IconButton, Select,
-    Stack,
+    IconButton,
+    Select,
     Table,
     TableBody,
     TableCell,
@@ -13,7 +14,13 @@ import {
     TableRow,
     TextInput
 } from "@contentful/f36-components";
-import {PlusCircleIcon, DeleteIcon, CheckCircleIcon, CloseIcon, PreviewIcon} from "@contentful/f36-icons";
+import {
+    PlusCircleIcon,
+    DeleteIcon,
+    CheckCircleIcon,
+    CloseIcon,
+    PreviewIcon
+} from "@contentful/f36-icons";
 
 import {FieldExtensionSDK} from "@contentful/app-sdk";
 
