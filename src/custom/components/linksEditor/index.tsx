@@ -1,12 +1,7 @@
-import React, {useState} from "react";
+import React, {Fragment, useState} from "react";
 import {useSDK} from "@contentful/react-apps-toolkit";
 import {
-    Box,
     Button,
-    Checkbox,
-    DragHandle,
-    IconButton,
-    Select,
     Table,
     TableBody,
     TableCell,
@@ -16,25 +11,15 @@ import {
 } from "@contentful/f36-components";
 import {
     PlusCircleIcon,
-    DeleteIcon,
-    CheckCircleIcon,
-    CloseIcon,
     PreviewIcon
 } from "@contentful/f36-icons";
-
 import {FieldExtensionSDK} from "@contentful/app-sdk";
 
+import {DragDropContext, Droppable, DropResult} from "react-beautiful-dnd";
+import update from "immutability-helper";
 
-type tTarget = "_blank" | "_self"
-
-interface iLink {
-    id: number;
-    sequence: number;
-    url: string;
-    label: string;
-    target: tTarget;
-    visible: boolean;
-}
+import {iLink, tTarget} from "./types";
+import EditorRow from "./editorRow";
 
 
 const LinksEditorComponent = () => {
@@ -43,6 +28,17 @@ const LinksEditorComponent = () => {
     const data = sdk.field.getValue();
     const [linksArray, setLinksArray] = useState<iLink[]>(JSON.parse(data || "[]"));
     const [toDeleteId, setToDeleteId] = useState<number | undefined>(undefined);
+
+    const doChangeLinks = (newLinksArray: iLink[]) => {
+        return sdk.field.setValue(JSON.stringify(newLinksArray))
+            .then(response => {
+                setLinksArray(JSON.parse(response?.toString() || "[]") as iLink[]);
+                console.info("Successfully updated value");
+                return response;
+            })
+            .catch(err => console.error(err));
+    };
+
 
     const onAddHandler = () => {
         const newLink: iLink = {
@@ -60,9 +56,8 @@ const LinksEditorComponent = () => {
 
     const onDeleteHandler = (id: number) => {
         const newLinksArray = linksArray.filter(link => link.id !== id);
-        sdk.field.setValue(JSON.stringify(newLinksArray))
-            .then(response => {
-                setLinksArray(JSON.parse(response?.toString() || "[]") as iLink[]);
+        doChangeLinks(newLinksArray)
+            .then(() => {
                 setToDeleteId(undefined);
             });
     };
@@ -91,9 +86,8 @@ const LinksEditorComponent = () => {
                     break;
             }
             if (doChange) {
-                sdk.field.setValue(JSON.stringify(newLinksArray))
-                    .then(response => {
-                        setLinksArray(JSON.parse(response?.toString() || "[]") as iLink[]);
+                doChangeLinks(newLinksArray)
+                    .then(() => {
                         setToDeleteId(undefined);
                     });
             }
@@ -101,110 +95,87 @@ const LinksEditorComponent = () => {
         }
     };
 
+    const onDragEndHandler = ({source, destination}: DropResult) => {
+        if (!destination) {
+            return null;
+        }
+        if (source.droppableId === destination.droppableId) {
+            const dragIndex = source.index;
+            const hoverIndex = destination.index;
+            if (dragIndex !== hoverIndex) {
+                const dragLink = linksArray[dragIndex];
+                const newLinksArray = update(linksArray, {
+                    $splice: [
+                        [dragIndex, 1],
+                        [hoverIndex, 0, dragLink]
+                    ]
+                });
+                newLinksArray.forEach((link, index) => link.sequence = index);
+                doChangeLinks(newLinksArray).then(r => r);
+            }
+        }
+    };
 
-    return <Table>
-        <TableHead>
-            <TableRow>
-                <TableCell>Move</TableCell>
-                <TableCell>Label</TableCell>
-                <TableCell>URL</TableCell>
-                <TableCell>target</TableCell>
-                <TableCell><PreviewIcon variant="muted"/></TableCell>
-                <TableCell width={105}/>
-            </TableRow>
-        </TableHead>
-        <TableBody>
-            <>
-                {
-                    linksArray.map(link => (
-                        <TableRow key={link.id}>
-                            <TableCell><DragHandle label="Move"/></TableCell>
-                            <TableCell>
-                                <TextInput
-                                    value={link.label}
-                                    name="label"
-                                    size="small"
-                                    placeholder="Label"
-                                    onChange={(e) => onChangeHandler(link.id, e)}
-                                />
-                            </TableCell>
-                            <TableCell>
-                                <TextInput
-                                    value={link.url}
-                                    name="url"
-                                    size="small"
-                                    placeholder="url"
-                                    onChange={(e) => onChangeHandler(link.id, e)}
-                                />
-                            </TableCell>
-                            <TableCell>
-                                <Select
-                                    value={link.target}
-                                    name="target"
-                                    onChange={(e) => onChangeHandler(link.id, e)}
-                                >
-                                    <Select.Option value="_self">_self</Select.Option>
-                                    <Select.Option value="_blank">_blank</Select.Option>
 
-                                </Select>
-                            </TableCell>
-                            <TableCell align="center" style={{
-                                verticalAlign: "middle",
-                                textAlign: "center"
-                            }}>
-                                <Checkbox name="visible"
-                                          isChecked={link.visible}
-                                          onChange={(e) => onChangeHandler(link.id, e)}/>
-                            </TableCell>
-                            <TableCell align="right">
-                                {
-                                    (toDeleteId === link.id) ? (<Box>
-                                                                 <IconButton icon={<CheckCircleIcon variant="negative"/>}
-                                                                             aria-label={"Confirm Delete"}
-                                                                             size="small"
-                                                                             style={{
-                                                                                 paddingLeft: 6,
-                                                                                 paddingRight: 6
-                                                                             }}
-                                                                             onClick={() => onDeleteHandler(link.id)}/>
-                                                                 <IconButton icon={<CloseIcon variant="positive"/>}
-                                                                             aria-label={"Cancel Delete"}
-                                                                             size="small"
-                                                                             style={{
-                                                                                 paddingLeft: 6,
-                                                                                 paddingRight: 6
-                                                                             }}
-                                                                             onClick={() => setToDeleteId(undefined)}/>
-                                                             </Box>)
-                                                             : (<Box>
-                                                                 <IconButton
-                                                                     icon={<DeleteIcon variant="negative"/>}
-                                                                     aria-label={"Delete"}
-                                                                     size="small"
-                                                                     style={{
-                                                                         paddingLeft: 6,
-                                                                         paddingRight: 6
-                                                                     }}
-                                                                     onClick={() => setToDeleteId(link.id)}/>
-                                                             </Box>)
-                                }
-                            </TableCell>
-                        </TableRow>
-                    ))
-                }
-                <TableRow>
-                    <TableCell colSpan={6}>
-                        <Button variant="transparent"
-                                startIcon={<PlusCircleIcon variant="primary" size="large"/>}
-                                onClick={onAddHandler}>
-                            Add
-                        </Button>
-                    </TableCell>
-                </TableRow>
-            </>
-        </TableBody>
-
-    </Table>;
+    return (
+        <>
+            <Table>
+                <TableHead>
+                    <TableRow>
+                        <TableCell/>
+                        <TableCell>Label</TableCell>
+                        <TableCell>URL</TableCell>
+                        <TableCell>target</TableCell>
+                        <TableCell><PreviewIcon variant="muted"/></TableCell>
+                        <TableCell width={105}/>
+                    </TableRow>
+                </TableHead>
+                <DragDropContext onDragEnd={onDragEndHandler}>
+                    <Droppable droppableId="ca-dattu-contentful-link-editor">
+                        {
+                            (provided, snapshot) => (
+                                <>
+                                    <TableBody ref={provided.innerRef}
+                                               {...provided.droppableProps}>
+                                        <>
+                                            {
+                                                linksArray.map((link, index) => (
+                                                    <Fragment key={link.id}>
+                                                        <EditorRow link={link}
+                                                                   onChange={(e) => onChangeHandler(link.id, e)}
+                                                                   index={index}
+                                                                   setToDeleteId={() => setToDeleteId(link.id)}
+                                                                   clearToDeleteId={() => setToDeleteId(undefined)}
+                                                                   isSetToDelete={toDeleteId === link.id}
+                                                                   onDelete={() => onDeleteHandler(link.id)}
+                                                        />
+                                                    </Fragment>
+                                                ))
+                                            }
+                                        </>
+                                        <TableRow>
+                                            {provided.placeholder}
+                                        </TableRow>
+                                    </TableBody>
+                                </>
+                            )
+                        }
+                    </Droppable>
+                </DragDropContext>
+                <TableBody>
+                    <TableRow>
+                        <TableCell colSpan={6}>
+                            <Button variant="transparent"
+                                    startIcon={<PlusCircleIcon variant="primary" size="large"/>}
+                                    onClick={onAddHandler}>
+                                Add
+                            </Button>
+                        </TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
+        </>
+    );
 };
 
 export default LinksEditorComponent;
