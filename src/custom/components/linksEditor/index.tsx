@@ -33,8 +33,10 @@ const LinksEditorComponent = () => {
         return sdk.field.setValue(JSON.stringify(newLinksArray))
             .then(response => {
                 setLinksArray(JSON.parse(response?.toString() || "[]") as iLink[]);
+                console.info("Successfully updated value");
                 return response;
-            });
+            })
+            .catch(err => console.error(err));
     };
 
 
@@ -109,7 +111,7 @@ const LinksEditorComponent = () => {
                     ]
                 });
                 newLinksArray.forEach((link, index) => link.sequence = index);
-                doChangeLinks(newLinksArray).then(response => console.log(response));
+                doChangeLinks(newLinksArray).then(r => r);
             }
         }
     };
