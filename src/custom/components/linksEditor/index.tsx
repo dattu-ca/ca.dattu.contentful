@@ -100,16 +100,17 @@ const LinksEditorComponent = () => {
         if (source.droppableId === destination.droppableId) {
             const dragIndex = source.index;
             const hoverIndex = destination.index;
-
-            const dragLink = linksArray[dragIndex];
-            const newLinksArray = update(linksArray, {
-                $splice: [
-                    [dragIndex, 1],
-                    [hoverIndex, 0, dragLink]
-                ]
-            });
-            newLinksArray.forEach((link, index) => link.sequence = index);
-            doChangeLinks(newLinksArray).then(response => console.log(response));
+            if (dragIndex !== hoverIndex) {
+                const dragLink = linksArray[dragIndex];
+                const newLinksArray = update(linksArray, {
+                    $splice: [
+                        [dragIndex, 1],
+                        [hoverIndex, 0, dragLink]
+                    ]
+                });
+                newLinksArray.forEach((link, index) => link.sequence = index);
+                doChangeLinks(newLinksArray).then(response => console.log(response));
+            }
         }
     };
 
@@ -131,26 +132,30 @@ const LinksEditorComponent = () => {
                     <Droppable droppableId="ca-dattu-contentful-link-editor">
                         {
                             (provided, snapshot) => (
-                                <TableBody ref={provided.innerRef}
-                                           {...provided.droppableProps}>
-                                    <>
-                                        {
-                                            linksArray.map((link, index) => (
-                                                <Fragment key={link.id}>
-                                                    <EditorRow link={link}
-                                                               onChange={(e) => onChangeHandler(link.id, e)}
-                                                               index={index}
-                                                               setToDeleteId={() => setToDeleteId(link.id)}
-                                                               clearToDeleteId={() => setToDeleteId(undefined)}
-                                                               isSetToDelete={toDeleteId === link.id}
-                                                               onDelete={() => onDeleteHandler(link.id)}
-                                                    />
-                                                </Fragment>
-                                            ))
-                                        }
-                                        {provided.placeholder}
-                                    </>
-                                </TableBody>
+                                <>
+                                    <TableBody ref={provided.innerRef}
+                                               {...provided.droppableProps}>
+                                        <>
+                                            {
+                                                linksArray.map((link, index) => (
+                                                    <Fragment key={link.id}>
+                                                        <EditorRow link={link}
+                                                                   onChange={(e) => onChangeHandler(link.id, e)}
+                                                                   index={index}
+                                                                   setToDeleteId={() => setToDeleteId(link.id)}
+                                                                   clearToDeleteId={() => setToDeleteId(undefined)}
+                                                                   isSetToDelete={toDeleteId === link.id}
+                                                                   onDelete={() => onDeleteHandler(link.id)}
+                                                        />
+                                                    </Fragment>
+                                                ))
+                                            }
+                                        </>
+                                        <TableRow>
+                                            {provided.placeholder}
+                                        </TableRow>
+                                    </TableBody>
+                                </>
                             )
                         }
                     </Droppable>
