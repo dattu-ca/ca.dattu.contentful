@@ -6,8 +6,7 @@ import {
     TableBody,
     TableCell,
     TableHead,
-    TableRow,
-    TextInput
+    TableRow
 } from "@contentful/f36-components";
 import {
     PlusCircleIcon,

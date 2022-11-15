@@ -1,4 +1,4 @@
-import React, {Fragment, ReactNode, useEffect, useMemo} from "react";
+import React, {Fragment, useEffect, useMemo} from "react";
 import {Draggable, DraggingStyle, NotDraggingStyle} from "react-beautiful-dnd";
 import {
     Box,
