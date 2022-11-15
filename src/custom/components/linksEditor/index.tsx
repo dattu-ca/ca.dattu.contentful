@@ -1,12 +1,7 @@
-import React, {useState} from "react";
+import React, {Fragment, useState} from "react";
 import {useSDK} from "@contentful/react-apps-toolkit";
 import {
-    Box,
     Button,
-    Checkbox,
-    DragHandle,
-    IconButton,
-    Select,
     Table,
     TableBody,
     TableCell,
@@ -16,25 +11,14 @@ import {
 } from "@contentful/f36-components";
 import {
     PlusCircleIcon,
-    DeleteIcon,
-    CheckCircleIcon,
-    CloseIcon,
     PreviewIcon
 } from "@contentful/f36-icons";
-
 import {FieldExtensionSDK} from "@contentful/app-sdk";
 
+import {DragDropContext, Droppable, DropResult} from "react-beautiful-dnd";
 
-type tTarget = "_blank" | "_self"
-
-interface iLink {
-    id: number;
-    sequence: number;
-    url: string;
-    label: string;
-    target: tTarget;
-    visible: boolean;
-}
+import {iLink, tTarget} from "./types";
+import EditorRow from "./editorRow";
 
 
 const LinksEditorComponent = () => {
@@ -101,97 +85,55 @@ const LinksEditorComponent = () => {
         }
     };
 
+    const onDragEndHandler = ({source, destination}: DropResult) => {
+        if (!destination) {
+            return null;
+        }
+        console.log(source, destination);
+    };
 
-    return <Table>
-        <TableHead>
-            <TableRow>
-                <TableCell>Move</TableCell>
-                <TableCell>Label</TableCell>
-                <TableCell>URL</TableCell>
-                <TableCell>target</TableCell>
-                <TableCell><PreviewIcon variant="muted"/></TableCell>
-                <TableCell width={105}/>
-            </TableRow>
-        </TableHead>
-        <TableBody>
-            <>
-                {
-                    linksArray.map(link => (
-                        <TableRow key={link.id}>
-                            <TableCell><DragHandle label="Move"/></TableCell>
-                            <TableCell>
-                                <TextInput
-                                    value={link.label}
-                                    name="label"
-                                    size="small"
-                                    placeholder="Label"
-                                    onChange={(e) => onChangeHandler(link.id, e)}
-                                />
-                            </TableCell>
-                            <TableCell>
-                                <TextInput
-                                    value={link.url}
-                                    name="url"
-                                    size="small"
-                                    placeholder="url"
-                                    onChange={(e) => onChangeHandler(link.id, e)}
-                                />
-                            </TableCell>
-                            <TableCell>
-                                <Select
-                                    value={link.target}
-                                    name="target"
-                                    onChange={(e) => onChangeHandler(link.id, e)}
-                                >
-                                    <Select.Option value="_self">_self</Select.Option>
-                                    <Select.Option value="_blank">_blank</Select.Option>
 
-                                </Select>
-                            </TableCell>
-                            <TableCell align="center" style={{
-                                verticalAlign: "middle",
-                                textAlign: "center"
-                            }}>
-                                <Checkbox name="visible"
-                                          isChecked={link.visible}
-                                          onChange={(e) => onChangeHandler(link.id, e)}/>
-                            </TableCell>
-                            <TableCell align="right">
-                                {
-                                    (toDeleteId === link.id) ? (<Box>
-                                                                 <IconButton icon={<CheckCircleIcon variant="negative"/>}
-                                                                             aria-label={"Confirm Delete"}
-                                                                             size="small"
-                                                                             style={{
-                                                                                 paddingLeft: 6,
-                                                                                 paddingRight: 6
-                                                                             }}
-                                                                             onClick={() => onDeleteHandler(link.id)}/>
-                                                                 <IconButton icon={<CloseIcon variant="positive"/>}
-                                                                             aria-label={"Cancel Delete"}
-                                                                             size="small"
-                                                                             style={{
-                                                                                 paddingLeft: 6,
-                                                                                 paddingRight: 6
-                                                                             }}
-                                                                             onClick={() => setToDeleteId(undefined)}/>
-                                                             </Box>)
-                                                             : (<Box>
-                                                                 <IconButton
-                                                                     icon={<DeleteIcon variant="negative"/>}
-                                                                     aria-label={"Delete"}
-                                                                     size="small"
-                                                                     style={{
-                                                                         paddingLeft: 6,
-                                                                         paddingRight: 6
-                                                                     }}
-                                                                     onClick={() => setToDeleteId(link.id)}/>
-                                                             </Box>)
-                                }
-                            </TableCell>
-                        </TableRow>
-                    ))
-                }
+    return (
+        <Table>
+            <TableHead>
+                <TableRow>
+                    <TableCell/>
+                    <TableCell>Label</TableCell>
+                    <TableCell>URL</TableCell>
+                    <TableCell>target</TableCell>
+                    <TableCell><PreviewIcon variant="muted"/></TableCell>
+                    <TableCell width={105}/>
+                </TableRow>
+            </TableHead>
+            <DragDropContext onDragEnd={onDragEndHandler}>
+                <Droppable droppableId="CaDattuContentfulLinkEditor">
+                    {
+                        (provided, snapshot) => (
+                            <TableBody ref={provided.innerRef}>
+                                <>
+                                    {
+                                        console.log("Droppable", provided)
+                                    }
+                                    {
+                                        linksArray.map((link, index) => (
+                                            <EditorRow key={link.id}
+                                                       link={link}
+                                                       onChange={(e) => onChangeHandler(link.id, e)}
+                                                       index={index}
+                                                       setToDeleteId={() => setToDeleteId(link.id)}
+                                                       clearToDeleteId={() => setToDeleteId(undefined)}
+                                                       isSetToDelete={toDeleteId === link.id}
+                                                       onDelete={() => onDeleteHandler(link.id)}
+                                            />
+                                        ))
+                                    }
+                                </>
+                            </TableBody>
+                        )
+                    }
+                </Droppable>
+            </DragDropContext>
+            <TableBody>
                 <TableRow>
                     <TableCell colSpan={6}>
                         <Button variant="transparent"
@@ -201,10 +143,9 @@ const LinksEditorComponent = () => {
                         </Button>
                     </TableCell>
                 </TableRow>
-            </>
-        </TableBody>
-
-    </Table>;
+            </TableBody>
+        </Table>
+    );
 };
 
 export default LinksEditorComponent;
