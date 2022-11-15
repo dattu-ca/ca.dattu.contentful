@@ -27,7 +27,7 @@ interface iEditorRow {
 
 const EditorRow = ({link, index, onChange, isSetToDelete, onDelete, clearToDeleteId, setToDeleteId}: iEditorRow) => {
 
-    const portal = useMemo(() => document.createElement("div"), []);
+    const portal = useMemo(() => document.createElement("tbody"), []);
 
     useEffect(() => {
         document.body.appendChild(portal);
@@ -36,10 +36,11 @@ const EditorRow = ({link, index, onChange, isSetToDelete, onDelete, clearToDelet
         };
     }, [portal]);
 
-    const port = (styles: DraggingStyle | NotDraggingStyle | undefined, element: ReactNode) => {
+    const port = (styles: DraggingStyle | NotDraggingStyle | undefined, element: any) => {
         if ((styles as DraggingStyle).position === "fixed") {
             return createPortal(element, portal);
         }
+        return element;
     };
 
     return <Draggable draggableId={link.id.toString()}
@@ -50,10 +51,10 @@ const EditorRow = ({link, index, onChange, isSetToDelete, onDelete, clearToDelet
                     {
                         port(provided.draggableProps.style,
                             <TableRow ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      {...provided.dragHandleProps}>
+                                {...provided.draggableProps}>
                                 <TableCell>
-                                    <DragHandle label="Move"/>
+                                    <DragHandle label="Move"
+                                                {...provided.dragHandleProps}/>
                                 </TableCell>
                                 <TableCell>
                                     <TextInput

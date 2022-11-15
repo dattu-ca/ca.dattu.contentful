@@ -16,6 +16,7 @@ import {
 import {FieldExtensionSDK} from "@contentful/app-sdk";
 
 import {DragDropContext, Droppable, DropResult} from "react-beautiful-dnd";
+import update from "immutability-helper";
 
 import {iLink, tTarget} from "./types";
 import EditorRow from "./editorRow";
@@ -27,6 +28,15 @@ const LinksEditorComponent = () => {
     const data = sdk.field.getValue();
     const [linksArray, setLinksArray] = useState<iLink[]>(JSON.parse(data || "[]"));
     const [toDeleteId, setToDeleteId] = useState<number | undefined>(undefined);
+
+    const doChangeLinks = (newLinksArray: iLink[]) => {
+        return sdk.field.setValue(JSON.stringify(newLinksArray))
+            .then(response => {
+                setLinksArray(JSON.parse(response?.toString() || "[]") as iLink[]);
+                return response;
+            });
+    };
+
 
     const onAddHandler = () => {
         const newLink: iLink = {
@@ -44,9 +54,8 @@ const LinksEditorComponent = () => {
 
     const onDeleteHandler = (id: number) => {
         const newLinksArray = linksArray.filter(link => link.id !== id);
-        sdk.field.setValue(JSON.stringify(newLinksArray))
-            .then(response => {
-                setLinksArray(JSON.parse(response?.toString() || "[]") as iLink[]);
+        doChangeLinks(newLinksArray)
+            .then(() => {
                 setToDeleteId(undefined);
             });
     };
@@ -75,9 +84,8 @@ const LinksEditorComponent = () => {
                     break;
             }
             if (doChange) {
-                sdk.field.setValue(JSON.stringify(newLinksArray))
-                    .then(response => {
-                        setLinksArray(JSON.parse(response?.toString() || "[]") as iLink[]);
+                doChangeLinks(newLinksArray)
+                    .then(() => {
                         setToDeleteId(undefined);
                     });
             }
@@ -89,62 +97,77 @@ const LinksEditorComponent = () => {
         if (!destination) {
             return null;
         }
-        console.log(source, destination);
+        if (source.droppableId === destination.droppableId) {
+            const dragIndex = source.index;
+            const hoverIndex = destination.index;
+
+            const dragLink = linksArray[dragIndex];
+            const newLinksArray = update(linksArray, {
+                $splice: [
+                    [dragIndex, 1],
+                    [hoverIndex, 0, dragLink]
+                ]
+            });
+            newLinksArray.forEach((link, index) => link.sequence = index);
+            doChangeLinks(newLinksArray).then(response => console.log(response));
+        }
     };
 
 
     return (
-        <Table>
-            <TableHead>
-                <TableRow>
-                    <TableCell/>
-                    <TableCell>Label</TableCell>
-                    <TableCell>URL</TableCell>
-                    <TableCell>target</TableCell>
-                    <TableCell><PreviewIcon variant="muted"/></TableCell>
-                    <TableCell width={105}/>
-                </TableRow>
-            </TableHead>
-            <DragDropContext onDragEnd={onDragEndHandler}>
-                <Droppable droppableId="CaDattuContentfulLinkEditor">
-                    {
-                        (provided, snapshot) => (
-                            <TableBody ref={provided.innerRef}>
-                                <>
-                                    {
-                                        console.log("Droppable", provided)
-                                    }
-                                    {
-                                        linksArray.map((link, index) => (
-                                            <EditorRow key={link.id}
-                                                       link={link}
-                                                       onChange={(e) => onChangeHandler(link.id, e)}
-                                                       index={index}
-                                                       setToDeleteId={() => setToDeleteId(link.id)}
-                                                       clearToDeleteId={() => setToDeleteId(undefined)}
-                                                       isSetToDelete={toDeleteId === link.id}
-                                                       onDelete={() => onDeleteHandler(link.id)}
-                                            />
-                                        ))
-                                    }
-                                </>
-                            </TableBody>
-                        )
-                    }
-                </Droppable>
-            </DragDropContext>
-            <TableBody>
-                <TableRow>
-                    <TableCell colSpan={6}>
-                        <Button variant="transparent"
-                                startIcon={<PlusCircleIcon variant="primary" size="large"/>}
-                                onClick={onAddHandler}>
-                            Add
-                        </Button>
-                    </TableCell>
-                </TableRow>
-            </TableBody>
-        </Table>
+        <>
+            <Table>
+                <TableHead>
+                    <TableRow>
+                        <TableCell/>
+                        <TableCell>Label</TableCell>
+                        <TableCell>URL</TableCell>
+                        <TableCell>target</TableCell>
+                        <TableCell><PreviewIcon variant="muted"/></TableCell>
+                        <TableCell width={105}/>
+                    </TableRow>
+                </TableHead>
+                <DragDropContext onDragEnd={onDragEndHandler}>
+                    <Droppable droppableId="ca-dattu-contentful-link-editor">
+                        {
+                            (provided, snapshot) => (
+                                <TableBody ref={provided.innerRef}
+                                           {...provided.droppableProps}>
+                                    <>
+                                        {
+                                            linksArray.map((link, index) => (
+                                                <Fragment key={link.id}>
+                                                    <EditorRow link={link}
+                                                               onChange={(e) => onChangeHandler(link.id, e)}
+                                                               index={index}
+                                                               setToDeleteId={() => setToDeleteId(link.id)}
+                                                               clearToDeleteId={() => setToDeleteId(undefined)}
+                                                               isSetToDelete={toDeleteId === link.id}
+                                                               onDelete={() => onDeleteHandler(link.id)}
+                                                    />
+                                                </Fragment>
+                                            ))
+                                        }
+                                        {provided.placeholder}
+                                    </>
+                                </TableBody>
+                            )
+                        }
+                    </Droppable>
+                </DragDropContext>
+                <TableBody>
+                    <TableRow>
+                        <TableCell colSpan={6}>
+                            <Button variant="transparent"
+                                    startIcon={<PlusCircleIcon variant="primary" size="large"/>}
+                                    onClick={onAddHandler}>
+                                Add
+                            </Button>
+                        </TableCell>
+                    </TableRow>
+                </TableBody>
+            </Table>
+        </>
     );
 };
 
