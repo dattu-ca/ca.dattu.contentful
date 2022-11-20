@@ -18,7 +18,6 @@ const options = {
     }
 };
 
-
 const extractId = (link: string) => {
     if (link) {
         const qs = link.split("?");
@@ -50,11 +49,13 @@ const YoutubeExtractorComponent = () => {
     const onGetYoutubeData = useCallback((link: string) => {
         setLoading(true);
         const linkId = (extractId(link));
-        axios.get(`http://localhost:3000/api/youtube/videos/get?id=${linkId}`)
+        axios.get(`https://dattuca.netlify.app/api/youtube/videos/get?id=${linkId}`)
             .then((response: AxiosResponse<youtube_v3.Schema$VideoListResponse>) => {
                 setItem(response?.data?.items?.[0]);
-                setLoading(false);
-            });
+            })
+            .catch(err => {
+                console.log(err);
+            }).finally(() => setLoading(false));
     }, []);
 
     const onSetFriendlyName = () => {
