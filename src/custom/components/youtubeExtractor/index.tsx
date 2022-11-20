@@ -1,5 +1,5 @@
 import React, {ReactNode, useCallback, useState} from "react";
-import {Accordion, Box, Button, Card, EntryCard, Grid, Paragraph, Table, TextInput} from "@contentful/f36-components";
+import {Accordion, Box, Button, Paragraph, Table, TextInput} from "@contentful/f36-components";
 import axios, {AxiosResponse} from "axios";
 import {youtube_v3} from "googleapis";
 import {useSDK} from "@contentful/react-apps-toolkit";
@@ -33,10 +33,6 @@ const extractId = (link: string) => {
         return params?.["v"];
     }
     return undefined;
-};
-
-const fetchYoutube = (id: string) => {
-    return axios.get(`http://localhost:3000/api/youtube/videos/get?id=${id}`);
 };
 
 const YoutubeExtractorComponent = () => {
